@@ -27,7 +27,7 @@
 		quiz = dao.getQuiz((Integer)session.getAttribute("quizId"));
 	}
 	//get quiz's creator's information
-	User owner = dao.getUser(quiz.getOwnerID());
+	group grp = dao.getGrpById(quiz.getOwnerID());
 	//get quiz's questions
 	Vector<Question> questions = new Vector<Question>();
 	for (int i : quiz.getQuestions()) {
@@ -40,7 +40,7 @@
 	$(document).ready(function(){		
 		$('#quizId').val('<%=quiz.getId()%>');
 		$('#title').text('<%=quiz.getTitle()%>');
-		$('#owner').text('<%=owner.getNickName()%>');
+		$('#owner').text('<%=grp.getGroupName()%>');
 		$('#type').text('<%=quiz.getType()%>');
 		$('#description').text('<%=quiz.getDescription()%>');
 	<%! int no = 1;%>
@@ -176,11 +176,7 @@
 		$('.tag').css('margin-left','3%');
 		$('[type="checkbox"]').change(function(){setSelVal(this);});
 		<%no=1;
-		if (user.getId() == owner.getId()) {//creator' perspective %>
-			$('.done,.not-done').css('display','none');
-			$('#basis').append('<a style="margin-bottom:3%;margin-top:3%;" class="btn-primary form-control" href="rank?id='+ '<%=quiz.getId()%>' +'">查看排行榜</a>');
-			$('#quizID').val('<%=quiz.getId()%>');
-		<%} else if (user.getQuizDone().indexOf(quiz.getId())==-1) {//quiz doer's perspective %>
+		if (user.getQuizDone().indexOf(quiz.getId())==-1) {//quiz doer's perspective %>
 			$('.owner,.done').css('display','none');
 			$('#frame').append('<button data-toggle="modal" data-target="#confirm" class="form-control btn-primary">提交</button>');
 		<%} else {//quiz doner's perspective %>
@@ -302,22 +298,14 @@
 
 	<div class="container">
 		<div class="row">
-			<div class="col-md-8 col-md-offset-2 col-xs-10 col-xs-offset-1">
-				<!-- share -->
-				<div class="bdsharebuttonbox" style="float:right"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone" title="分享到QQ空间"></a><a href="#" class="bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a><a href="#" class="bds_tqq" data-cmd="tqq" title="分享到腾讯微博"></a><a href="#" class="bds_renren" data-cmd="renren" title="分享到人人网"></a><a href="#" class="bds_weixin" data-cmd="weixin" title="分享到微信"></a></div>
-					<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"Staples——你的专属社交问答平台\nRaise your questions, answer your interests","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"0","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
-				</div>
-				<!-- share -->
-			</div>
-		
-			<div id="frame" class="col-md-8 col-md-offset-2 col-xs-10 col-xs-offset-1" style="border:1px solid #ccc; padding:3%">
+			<div id="frame" class="col-md-8 col-md-offset-2 col-xs-10 col-xs-offset-1">
 				<div id="basis" class="page-header">
-					<h1 id="title" ></h1>
+					<h1 id="title"></h1>
 					<h3 id="owner" style="color: blue; text-align: right"></h3>
 					<span id="type" class="label label-info" style="font-size: 15px"></span> 
-					<span id="description" style="color:gray; font-size: 20px"></span>	
+					<span id="description" style="color:gray; font-size: 20px"></span>
 				</div>
-				<form id="quiz" action="doQuiz" method="post">
+				<form id="quiz" action="doGroupQuiz" method="post">
 					<div style="display:none">
 						<input type="text" name="record" id="record">
 						<input type="text" name="quizId" id="quizId">
@@ -325,6 +313,7 @@
 				</form>
 			</div>
 		</div>
+	</div>
 
 	<div class="modal fade" id="confirm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 	  <div class="modal-dialog" style="z-index: 10000 !important;">

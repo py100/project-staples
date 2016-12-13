@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>测试排名</title>
+	<title>好友排名</title>
 	<link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.4/css/bootstrap.min.css">
 	<script src="http://cdn.bootcss.com/jquery/1.11.2/jquery.min.js"></script>
 	<script src="http://cdn.bootcss.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
@@ -12,8 +12,24 @@
 <%-- java --%>
 <%
 	Dao dao = new Dao();
-	Quiz quiz = dao.getQuiz(Integer.parseInt(request.getParameter("id")));
-	ArrayList<Pair<Integer, Integer>> rank = quiz.getRank();
+	User user = (User) session.getAttribute("user");
+	//<userId, score>
+	HashMap<Integer, Integer> rec = new HashMap<Integer, Integer>();
+	for (int quizId : user.getPublishedQuiz()) {
+		for (Pair<Integer, Integer> entry : dao.getQuiz(quizId).getRank()) {
+			if (rec.containsKey(entry.getValue())) {
+				rec.replace(entry.getValue(), entry.getKey()+rec.get(entry.getValue()));
+			} else {
+				rec.put(entry.getValue(), entry.getKey());
+			}
+		}
+	}
+	
+	ArrayList<Pair<Integer, Integer>> rank = new ArrayList<Pair<Integer, Integer>>();
+	for (Map.Entry<Integer,Integer> entry : rec.entrySet()) {
+		rank.add(new Pair<Integer, Integer>(entry.getValue(), entry.getKey()));
+	}
+	
 	Collections.sort(rank, new Comparator<Pair<Integer,Integer>>(){
 		public int compare(Pair<Integer,Integer> i, Pair<Integer,Integer> j){
 			return j.getKey() - i.getKey();
@@ -32,25 +48,14 @@ $(document).ready(function(){
 <nav class="navbar navbar-default" role="navigation"></nav>
 <div class="container" style="margin-top:5%;">
 	<div class="row">
-		<div class="col-md-8 col-md-offset-2 col-xs-10 col-xs-offset-1">
-			<!-- share -->
-			<div class="bdsharebuttonbox" style="float:right"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone" title="分享到QQ空间"></a><a href="#" class="bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a><a href="#" class="bds_tqq" data-cmd="tqq" title="分享到腾讯微博"></a><a href="#" class="bds_renren" data-cmd="renren" title="分享到人人网"></a><a href="#" class="bds_weixin" data-cmd="weixin" title="分享到微信"></a></div>
-				<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"Staples——你的专属社交问答平台\nRaise your questions, answer your interests","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"0","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
-			</div>
-			<!-- share -->
-		</div><br>
-	
 		<div class="col-xs-10 col-md-8 col-xs-offset-1 col-md-offset-2">
 			<div class="panel panel-primary">
 				<div class="panel-heading">
 					<div class="panel-title">
-						<span>
-							<a style="font-size:30px;color:yellow;margin-left:1%" href="quiz?id=<%=quiz.getId()%>"><%=quiz.getTitle() %></a> 
-						</span>的排行榜 
-						<span class="label label-info"> <%=quiz.getType()%></span>
+						<span style="font-size:30px;color:yellow;margin-left:1%"><%=user.getNickName() %> </span>的总排行榜 
 					</div>
 				</div>
-				<div class="panel-body" style="color:gray"><%=quiz.getDescription() %></div>
+				<div class="panel-body" style="color:gray"><%=user.getIntro() %></div>
 				<table class="table">
 					<tr>
 						<th>#</th>
@@ -72,6 +77,7 @@ $(document).ready(function(){
 			</div>
 		</div>
 	</div>
+</div>
 
 </body>
 </html>

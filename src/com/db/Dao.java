@@ -1,18 +1,19 @@
 package com.db;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Vector;
 
-import com.model.Message;
-import com.model.Question;
-import com.model.Quiz;
-import com.model.User;
-import com.model.group;
+
+import com.model.*;
 
 import javafx.util.Pair;
 
@@ -29,7 +30,7 @@ public class Dao
     String username = "root";
     String password = "root";
     String dbUrl = String.format("jdbc:mysql://%s:%s/%s", new Object[] {
-      "localhost", "3306", "staples" });    
+      "qqopxxnabssr.mysql.sae.sina.com.cn", "10624", "staples" });    
     
 	Class.forName(driver);
 	this.con = DriverManager.getConnection(dbUrl, username, password);
@@ -41,6 +42,17 @@ public class Dao
     if (this.con != null) {
         this.con.close();
     }
+  }
+  
+  public void picture(File file, int id) throws SQLException, IOException {
+	  FileInputStream in = null;
+	  in = new FileInputStream(file);
+	  String sql = "update user set picture = ? where id = " + id;
+	  System.out.println(id);
+	  PreparedStatement ps = this.con.prepareStatement(sql);
+	  System.out.println(in.toString());
+	  ps.setBinaryStream(1, in, in.available());
+	  ps.executeUpdate();
   }
   
   public boolean execute(String sql) throws SQLException
@@ -167,6 +179,22 @@ public class Dao
 			  		+ "' WHERE id=" + user.getId()
 			  		+ ";");
   }
+  
+
+	public void addGroupQuiz(int groupId, int quizId) throws SQLException {
+		ResultSet rs = executeQuery("SELECT pubQuiz from group_db WHERE groupid=" + groupId + ";");
+		  StringBuffer newRec = new StringBuffer();
+		  newRec.append("&" + quizId);
+		  if (rs.next()) {
+			  String exsited = rs.getString(1);
+			  if (exsited != "NULL" && exsited != "null")
+				  newRec.append(exsited);
+		  }
+		  executeUpdate("UPDATE group_db SET pubQuiz='"
+				  		+ newRec.toString() 
+				  		+ "' WHERE groupid=" + groupId
+				  		+ ";");
+	}
   
   public void addQuizRecord(int quizId, String rec) throws SQLException {
 	  ResultSet rs = executeQuery("SELECT records from quiz WHERE id=" + quizId + ";");
@@ -323,6 +351,10 @@ public class Dao
 		  for (int i=1 ; i<quizzesDone.length; ++i) {
 			  user.addQuizDone(Integer.parseInt(quizzesDone[i]));
 		  }
+		  String[] groups = rs.getString("groups").split("&", -1);
+		  for (int i=1 ; i<groups.length; ++i) {
+			  user.addGroup(Integer.parseInt(groups[i]));
+		  }
 		  user.setIntro(rs.getString("intro"));
 		  String[] followings = rs.getString("followings").split("&",-1);
 		  for (int i=1 ; i<followings.length; ++i) {
@@ -331,10 +363,6 @@ public class Dao
 		  String[] followers = rs.getString("followers").split("&",-1);
 		  for (int i=1 ; i<followers.length; ++i) {
 			  user.addFollower(Integer.parseInt(followers[i]));
-		  }
-		  String[] groups = rs.getString("groups").split("&",-1);
-		  for (int i=1 ; i<groups.length; ++i) {
-			  user.addGroup(Integer.parseInt(groups[i]));
 		  }
  	  }
 	  return user;
@@ -401,7 +429,7 @@ public class Dao
   public int insertGroup(group grp) throws SQLException {
 		// TODO Auto-generated method stub
 		String tmp = String
-				.format("insert into group_db values(null,'%s','%s',NOW(),'%s','%s','%s');",
+				.format("insert into group_db values(null,'%s','%s',NOW(),'%s','%s','%s','');",
 						grp.getGroupName(), grp.getGroupManager(),
 						grp.getInfo(), grp.getGroupMember(), grp.getTagStr());
 		;
@@ -425,6 +453,14 @@ public class Dao
 			grp.setCreateDate(rs.getDate("createdate"));
 			grp.setInfo(rs.getString("info"));
 			grp.setTotMembers(grp.getMemberIds().size());
+			
+			String pubQuizStr = rs.getString("pubQuiz");
+			if (!pubQuizStr.equals("")) {
+				String[] I = pubQuizStr.split("&");
+				for (int i=1; i<I.length; ++i) {
+					grp.addQuiz(Integer.parseInt(I[i]));
+				}
+			}
 			return grp;
 		}
 		return null;
@@ -513,4 +549,8 @@ public class Dao
 	public void insertNewMsg(Message newMsg) throws SQLException {
 		this.execute(newMsg.tosql());
 	}
+	
+	
+	
+
 }
